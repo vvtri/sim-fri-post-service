@@ -1,4 +1,4 @@
-import { AudienceType, FileType } from 'common';
+import { AudienceType, FileType } from 'shared';
 import { UserResDto } from '../../../auth/dtos/common/res/user.res.dto';
 import { File } from '../../entities/file.entity';
 

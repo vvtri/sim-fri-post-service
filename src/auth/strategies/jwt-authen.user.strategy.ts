@@ -1,9 +1,10 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { AuthStatusCode, UnAuthorizedExc } from 'common';
+import { UnAuthorizedExc } from 'common';
 import dayjs from 'dayjs';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { AuthStatusCode } from 'shared';
 import { GlobalConfig } from '../../common/configs/global.config';
 import { StrategyName } from '../constants/index.constant';
 import { UserRepository } from '../repositories/user.repository';

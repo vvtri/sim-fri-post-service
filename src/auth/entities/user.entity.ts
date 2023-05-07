@@ -1,7 +1,7 @@
 import { BaseEntity } from 'common';
+import { UserStatus } from 'shared';
 import { Column, Entity, OneToMany, PrimaryColumn } from 'typeorm';
 import { File } from '../../file/entities/file.entity';
-import { UserStatus } from '../enums/user.enum';
 
 @Entity()
 export class User extends BaseEntity {

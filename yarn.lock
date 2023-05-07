@@ -3110,7 +3110,7 @@ commander@^2.20.0:
 
 "common@git+https://github.com/vvtri/sim-fri-common.git#develop":
   version "1.0.0"
-  resolved "git+https://github.com/vvtri/sim-fri-common.git#4190985d7bcf6133c9b8e5878dafa022de4ed78e"
+  resolved "git+https://github.com/vvtri/sim-fri-common.git#91e3e042693b54298d547a81196041cbce3a444c"
 
 component-emitter@^1.3.0:
   version "1.3.0"
@@ -6498,6 +6498,10 @@ sha.js@^2.4.11:
   dependencies:
     inherits "^2.0.1"
     safe-buffer "^5.0.1"
+
+"shared@git+https://github.com/vvtri/sim-fri-shared.git#develop":
+  version "1.0.0"
+  resolved "git+https://github.com/vvtri/sim-fri-shared.git#91c3738f1063777f44f0b254d0d7049263127596"
 
 shebang-command@^1.2.0:
   version "1.2.0"
