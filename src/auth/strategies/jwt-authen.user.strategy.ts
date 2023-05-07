@@ -1,6 +1,8 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
+import { AuthStatusCode, UnAuthorizedExc } from 'common';
+import dayjs from 'dayjs';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { GlobalConfig } from '../../common/configs/global.config';
 import { StrategyName } from '../constants/index.constant';
@@ -25,7 +27,13 @@ export class JwtAuthenUserStrategy extends PassportStrategy(
   }
 
   async validate(payload: JwtAuthPayload) {
-    const { userId } = payload;
+    const { userId, exp } = payload;
+
+    if (dayjs.unix(exp).isBefore(dayjs())) {
+      throw new UnAuthorizedExc({
+        statusCode: AuthStatusCode.ACCESS_TOKEN_EXPIRES,
+      });
+    }
 
     const [user] = await this.userRepo.find({ where: { id: userId } });
 

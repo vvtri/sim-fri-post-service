@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common/pipes';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_PIPE } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { KafkaModule } from '@vvtri/nestjs-kafka';
 import { AllExceptionsFilter } from 'common';
 import firebase from 'firebase-admin';
 import {
@@ -14,6 +15,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import globalConfig, { GlobalConfig } from './common/configs/global.config';
+import { consumerConfig, kafkaConfig } from './common/configs/kafka.config';
 import { UtilModule } from './util/util.module';
 
 @Module({
@@ -30,6 +32,7 @@ import { UtilModule } from './util/util.module';
         return addTransactionalDataSource(dataSource);
       },
     }),
+    KafkaModule.forRoot({ kafkaConfig, consumerConfig }),
     AuthModule,
     UtilModule,
   ],

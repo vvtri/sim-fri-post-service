@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { TypeOrmCustomModule } from 'common';
 import { GlobalConfig } from '../common/configs/global.config';
 import { UserRepository } from './repositories/user.repository';
+import { UserListenerService } from './services/user-listener.service';
 import { JwtAuthenUserStrategy } from './strategies/jwt-authen.user.strategy';
 
 @Module({
@@ -21,6 +22,6 @@ import { JwtAuthenUserStrategy } from './strategies/jwt-authen.user.strategy';
     }),
     TypeOrmCustomModule.forFeature([UserRepository]),
   ],
-  providers: [JwtAuthenUserStrategy],
+  providers: [JwtAuthenUserStrategy, UserListenerService],
 })
 export class AuthModule {}

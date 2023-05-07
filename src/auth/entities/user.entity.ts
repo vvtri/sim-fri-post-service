@@ -1,14 +1,12 @@
 import { BaseEntity } from 'common';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryColumn } from 'typeorm';
+import { File } from '../../file/entities/file.entity';
 import { UserStatus } from '../enums/user.enum';
 
 @Entity()
 export class User extends BaseEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryColumn()
   id: number;
-
-  @Column({ length: 1000 })
-  password: string;
 
   @Column({ type: 'enum', enum: UserStatus })
   status: UserStatus;
@@ -30,4 +28,7 @@ export class User extends BaseEntity {
 
   @Column({ name: 'birth_date', type: 'timestamptz', nullable: true })
   birthDate: Date;
+
+  @OneToMany(() => File, (f) => f.user)
+  files: File[];
 }
