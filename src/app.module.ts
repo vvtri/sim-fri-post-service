@@ -17,6 +17,7 @@ import { AuthModule } from './auth/auth.module';
 import globalConfig, { GlobalConfig } from './common/configs/global.config';
 import { consumerConfig, kafkaConfig } from './common/configs/kafka.config';
 import { FileModule } from './file/file.module';
+import { PostModule } from './post/post.module';
 import { UtilModule } from './util/util.module';
 
 @Module({
@@ -37,6 +38,7 @@ import { UtilModule } from './util/util.module';
     AuthModule,
     UtilModule,
     FileModule,
+    PostModule,
   ],
   controllers: [AppController],
   providers: [

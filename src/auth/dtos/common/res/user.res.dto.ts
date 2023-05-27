@@ -1,4 +1,5 @@
 import { User } from '../../../entities/user.entity';
+import { UserProfileResDto } from './user-profile.res.dto';
 
 export interface UserResDtoParams {
   data?: User;
@@ -7,19 +8,14 @@ export interface UserResDtoParams {
 export class UserResDto {
   id: number;
   phoneNumber: string;
-  address: string;
   email: string;
-  name: string;
-  birthDate: Date;
   createdAt: Date;
+  profile: UserProfileResDto;
 
   static mapProperty(dto: UserResDto, { data }: UserResDtoParams) {
     dto.id = data.id;
     dto.phoneNumber = data.phoneNumber;
-    dto.address = data.address;
     dto.email = data.email;
-    dto.name = data.name;
-    dto.birthDate = data.birthDate;
     dto.createdAt = data.createdAt;
   }
 
@@ -30,6 +26,9 @@ export class UserResDto {
     const result = new UserResDto();
 
     this.mapProperty(result, params);
+
+    result.profile = UserProfileResDto.forUser({ data: data.userProfile });
+
     return result;
   }
 }

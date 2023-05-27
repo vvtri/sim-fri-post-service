@@ -5,13 +5,17 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  PrimaryGeneratedColumn,
+  OneToMany,
+  OneToOne,
+  PrimaryColumn,
 } from 'typeorm';
+import { UserProfile } from '../../auth/entities/user-profile.entity';
 import { User } from '../../auth/entities/user.entity';
+import { PostFile } from '../../post/entities/post-file.entity';
 
 @Entity()
 export class File extends BaseEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryColumn()
   id: number;
 
   @Column({ length: 255 })
@@ -37,4 +41,10 @@ export class File extends BaseEntity {
   @JoinColumn()
   user: User;
   // end join user
+
+  @OneToMany(() => PostFile, (pf) => pf.post)
+  postFiles: PostFile[];
+
+  @OneToOne(() => UserProfile, (up) => up.avatar)
+  userProfile: UserProfile;
 }
