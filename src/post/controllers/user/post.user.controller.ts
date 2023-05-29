@@ -10,12 +10,13 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { PaginationResponse, PrefixType } from 'common';
+import { PrefixType } from 'common';
 import { User } from '../../../auth/entities/user.entity';
 import {
   AuthenticateUser,
   CurrentUser,
 } from '../../../common/decorators/auth.decorator';
+import { PaginationResponse } from '../../../common/decorators/swagger.decorator';
 import { PostResDto } from '../../dtos/common/post.res.dto';
 import {
   CreatePostUserReqDto,

@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ApiExtraModels } from '@nestjs/swagger';
-import { ExpectationFailedExc, PaginationResDto } from 'common';
+import { ExpectationFailedExc } from 'common';
 import { Pagination, paginate } from 'nestjs-typeorm-paginate';
 import { AudienceType } from 'shared';
 import { Transactional } from 'typeorm-transactional';
@@ -16,7 +15,6 @@ import { PostFileRepository } from '../../repositories/post-file.repository';
 import { PostRepository } from '../../repositories/post.repository';
 
 @Injectable()
-@ApiExtraModels(PaginationResDto)
 export class PostUserService {
   constructor(
     private postRepo: PostRepository,
@@ -29,11 +27,22 @@ export class PostUserService {
 
     const qb = this.postRepo
       .createQueryBuilder('p')
-      .where('p.userId = :userId', { userId: user.id });
+      .where('p.userId = :userId', { userId: user.id })
+      .groupBy('p.id')
+      .select('p.id')
+      .orderBy('p.createdAt', 'DESC');
 
     const { items, meta } = await paginate(qb, { page, limit });
 
-    const result = items.map((item) => PostResDto.forUser({ data: item }));
+    const result = await Promise.all(
+      items.map(async (item) => {
+        const post = await this.postRepo.findOne({
+          where: { id: item.id },
+          relations: { postFiles: { file: true }, user: { userProfile: true } },
+        });
+        return PostResDto.forUser({ data: post });
+      }),
+    );
 
     return new Pagination(result, meta);
   }
@@ -43,6 +52,8 @@ export class PostUserService {
     const { limit, page, userId } = dto;
 
     const isFriend = true;
+    const isMyPosts = user.id === userId;
+
     const audienceTypes = [AudienceType.PUBLIC];
     if (isFriend) {
       audienceTypes.push(AudienceType.FRIEND);
@@ -52,7 +63,8 @@ export class PostUserService {
       .createQueryBuilder('p')
       .where('p.audienceType IN (:...audienceTypes)', { audienceTypes })
       .groupBy('p.id')
-      .select('p.id');
+      .select('p.id')
+      .orderBy('p.createdAt', 'DESC');
 
     if (userId) {
       qb.andWhere('p.userId = :userId', { userId });
@@ -66,7 +78,7 @@ export class PostUserService {
           where: { id: item.id },
           relations: { postFiles: { file: true }, user: { userProfile: true } },
         });
-        return PostResDto.forUser({ data: post });
+        return PostResDto.forUser({ data: post, isMutable: isMyPosts });
       }),
     );
 

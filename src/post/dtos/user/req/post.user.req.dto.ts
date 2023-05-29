@@ -4,9 +4,9 @@ import {
   IsValidEnum,
   IsValidNumber,
   IsValidText,
-  PaginationReqDto,
 } from 'common';
 import { AudienceType } from 'shared';
+import { PaginationReqDto } from '../../../../common/dtos/pagination.dto';
 
 export class GetListMyPostUserReqDto extends PaginationReqDto {}
 

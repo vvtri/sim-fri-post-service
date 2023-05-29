@@ -5,6 +5,7 @@ import { Post } from '../../entities/post.entity';
 
 export interface PostResDtoParams {
   data?: Post;
+  isMutable?: boolean;
 }
 
 export class PostResDto {
@@ -13,11 +14,17 @@ export class PostResDto {
   audienceType: AudienceType;
   user: UserResDto;
   files: FileResDto[];
+  createdAt: Date;
+  updatedAt: Date;
+  isMutable: boolean;
 
-  static mapProperty(dto: PostResDto, { data }: PostResDtoParams) {
+  static mapProperty(dto: PostResDto, { data, isMutable }: PostResDtoParams) {
     dto.id = data.id;
     dto.content = data.content;
     dto.audienceType = data.audienceType;
+    dto.createdAt = data.createdAt;
+    dto.updatedAt = data.updatedAt;
+    dto.isMutable = isMutable || false;
   }
 
   static forUser(params: PostResDtoParams) {
