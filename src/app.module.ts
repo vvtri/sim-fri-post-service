@@ -17,6 +17,7 @@ import { AuthModule } from './auth/auth.module';
 import globalConfig, { GlobalConfig } from './common/configs/global.config';
 import { consumerConfig, kafkaConfig } from './common/configs/kafka.config';
 import { FileModule } from './file/file.module';
+import { FriendModule } from './friend/firend.module';
 import { PostModule } from './post/post.module';
 import { UtilModule } from './util/util.module';
 
@@ -34,11 +35,16 @@ import { UtilModule } from './util/util.module';
         return addTransactionalDataSource(dataSource);
       },
     }),
-    KafkaModule.forRoot({ kafkaConfig, consumerConfig }),
+    KafkaModule.forRoot({
+      kafkaConfig,
+      consumerConfig,
+      shouldRunConsumerAsync: true,
+    }),
     AuthModule,
     UtilModule,
     FileModule,
     PostModule,
+    FriendModule,
   ],
   controllers: [AppController],
   providers: [
