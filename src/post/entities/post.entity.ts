@@ -9,6 +9,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { User } from '../../auth/entities/user.entity';
+import { Comment } from '../../comment/entities/comment.entity';
 import { PostFile } from './post-file.entity';
 import { PostReaction } from './post-reaction.entity';
 
@@ -37,4 +38,7 @@ export class Post extends BaseEntity {
 
   @OneToMany(() => PostReaction, (pr) => pr.post)
   postReactions: PostReaction[];
+
+  @OneToMany(() => Comment, (c) => c.post)
+  comments: Comment[];
 }

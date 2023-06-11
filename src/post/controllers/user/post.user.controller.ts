@@ -20,8 +20,8 @@ import { PaginationResponse } from '../../../common/decorators/swagger.decorator
 import { PostResDto } from '../../dtos/common/post.res.dto';
 import {
   CreatePostUserReqDto,
-  GetListMyPostUserReqDto,
   GetListPostUserReqDto,
+  ReactPostUserReqDto,
 } from '../../dtos/user/req/post.user.req.dto';
 import { PostUserService } from '../../services/user/post.user.service';
 
@@ -30,12 +30,6 @@ import { PostUserService } from '../../services/user/post.user.service';
 @ApiTags('Post user')
 export class PostUserController {
   constructor(private postUserService: PostUserService) {}
-
-  @Get('/my')
-  @PaginationResponse(PostResDto)
-  getMyPosts(@Query() dto: GetListMyPostUserReqDto, @CurrentUser() user: User) {
-    return this.postUserService.getMyPosts(dto, user);
-  }
 
   @Get(':id')
   getDetail(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: User) {
@@ -49,6 +43,11 @@ export class PostUserController {
     @CurrentUser() user: User,
   ) {
     return this.postUserService.getListPosts(query, user);
+  }
+
+  @Post('react')
+  react(@Body() body: ReactPostUserReqDto, @CurrentUser() user: User) {
+    return this.postUserService.reactPost(body, user);
   }
 
   @Post()

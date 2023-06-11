@@ -1,8 +1,12 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmCustomModule } from 'common';
 import { UserRepository } from '../auth/repositories/user.repository';
+import { CommentReactionRepository } from '../comment/repositories/comment-reaction.repository';
+import { CommentRepository } from '../comment/repositories/comment.repository';
+import { FriendRequestRepository } from '../friend/repositories/friend-request.repository';
 import { PostUserController } from './controllers/user/post.user.controller';
 import { PostFileRepository } from './repositories/post-file.repository';
+import { PostReactionRepository } from './repositories/post-reaction.repository';
 import { PostRepository } from './repositories/post.repository';
 import { PostUserService } from './services/user/post.user.service';
 
@@ -12,6 +16,10 @@ import { PostUserService } from './services/user/post.user.service';
       PostRepository,
       UserRepository,
       PostFileRepository,
+      CommentRepository,
+      PostReactionRepository,
+      CommentReactionRepository,
+      FriendRequestRepository,
     ]),
   ],
   controllers: [PostUserController],

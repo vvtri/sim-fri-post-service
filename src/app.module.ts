@@ -14,6 +14,7 @@ import { dataSource } from '../data-source';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { CommentModule } from './comment/comment.module';
 import globalConfig, { GlobalConfig } from './common/configs/global.config';
 import { consumerConfig, kafkaConfig } from './common/configs/kafka.config';
 import { FileModule } from './file/file.module';
@@ -45,12 +46,13 @@ import { UtilModule } from './util/util.module';
     FileModule,
     PostModule,
     FriendModule,
+    CommentModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
-    { provide: APP_PIPE, useValue: new ValidationPipe() },
+    { provide: APP_PIPE, useValue: new ValidationPipe({ transform: true }) },
   ],
 })
 export class AppModule implements OnModuleInit {

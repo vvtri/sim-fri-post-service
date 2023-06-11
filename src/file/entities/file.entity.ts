@@ -11,6 +11,8 @@ import {
 } from 'typeorm';
 import { UserProfile } from '../../auth/entities/user-profile.entity';
 import { User } from '../../auth/entities/user.entity';
+import { CommentFile } from '../../comment/entities/comment-file.entity';
+import { Comment } from '../../comment/entities/comment.entity';
 import { PostFile } from '../../post/entities/post-file.entity';
 
 @Entity()
@@ -47,4 +49,7 @@ export class File extends BaseEntity {
 
   @OneToOne(() => UserProfile, (up) => up.avatar)
   userProfile: UserProfile;
+
+  @OneToMany(() => CommentFile, (cf) => cf.file)
+  commentFiles: Comment[];
 }

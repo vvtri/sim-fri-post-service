@@ -1,6 +1,8 @@
 import { BaseEntity } from 'common';
 import { UserStatus } from 'shared';
 import { Column, Entity, OneToMany, OneToOne, PrimaryColumn } from 'typeorm';
+import { CommentReaction } from '../../comment/entities/comment-reaction.entity';
+import { Comment } from '../../comment/entities/comment.entity';
 import { File } from '../../file/entities/file.entity';
 import { FriendRequest } from '../../friend/entities/friend-request.entity';
 import { PostReaction } from '../../post/entities/post-reaction.entity';
@@ -38,4 +40,10 @@ export class User extends BaseEntity {
 
   @OneToMany(() => FriendRequest, (f) => f.beRequested)
   friendBeRequesteds: FriendRequest[];
+
+  @OneToMany(() => Comment, (c) => c.user)
+  comments: Comment[];
+
+  @OneToMany(() => CommentReaction, (cr) => cr.user)
+  commentReactions: CommentReaction[];
 }
