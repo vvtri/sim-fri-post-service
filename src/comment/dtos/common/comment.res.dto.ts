@@ -20,6 +20,7 @@ export interface CommentResDtoParams {
 export class CommentResDto {
   id: number;
   content: string;
+  mpath: string;
   postId: number;
   post: PostResDto;
   children: CommentResDto[];
@@ -48,6 +49,7 @@ export class CommentResDto {
     dto.childCount = childCount;
     dto.createdAt = data.createdAt;
     dto.parentId = data.parentId;
+    dto.mpath = data.mpath;
 
     if (reactionCount) {
       dto.totalCount = reactionCount.totalCount;

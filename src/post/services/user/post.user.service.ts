@@ -1,23 +1,34 @@
 import { Injectable } from '@nestjs/common';
-import { ExpectationFailedExc } from 'common';
+import { KafkaProducer } from '@vvtri/nestjs-kafka';
+import {
+  DeletePostReactionKafkaPayload,
+  ExpectationFailedExc,
+  KAFKA_TOPIC,
+  SavePostReactionKafkaPayload,
+} from 'common';
 import { Pagination, paginate } from 'nestjs-typeorm-paginate';
 import { AudienceType, FriendRequestStatus } from 'shared';
 import { Brackets, IsNull } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
 import { User } from '../../../auth/entities/user.entity';
-import { CommentReaction } from '../../../comment/entities/comment-reaction.entity';
+import { CommentResDto } from '../../../comment/dtos/common/comment.res.dto';
 import { CommentReactionRepository } from '../../../comment/repositories/comment-reaction.repository';
 import { CommentRepository } from '../../../comment/repositories/comment.repository';
+import { CommentUserService } from '../../../comment/services/user/comment.user.service';
 import { FriendRequestRepository } from '../../../friend/repositories/friend-request.repository';
 import { PostReactionResDto } from '../../dtos/common/post-reaction.res.dto';
-import { PostResDto, PostResDtoParams } from '../../dtos/common/post.res.dto';
+import { PostResDto } from '../../dtos/common/post.res.dto';
 import {
   CreatePostUserReqDto,
+  DeleteReactPostUserReqDto,
+  GetDetailPostUserReqDto,
   GetListPostUserReqDto,
   ReactPostUserReqDto,
   UpdatePostUserReqDto,
 } from '../../dtos/user/req/post.user.req.dto';
 import { PostFile } from '../../entities/post-file.entity';
+import { PostReaction } from '../../entities/post-reaction.entity';
+import { Post } from '../../entities/post.entity';
 import { PostFileRepository } from '../../repositories/post-file.repository';
 import { PostReactionRepository } from '../../repositories/post-reaction.repository';
 import { PostRepository } from '../../repositories/post.repository';
@@ -25,6 +36,9 @@ import { PostRepository } from '../../repositories/post.repository';
 @Injectable()
 export class PostUserService {
   constructor(
+    private kafkaProducer: KafkaProducer,
+    private commentUserService: CommentUserService,
+
     private postRepo: PostRepository,
     private postFileRepo: PostFileRepository,
     private commentRepo: CommentRepository,
@@ -35,9 +49,9 @@ export class PostUserService {
 
   @Transactional()
   async getListPosts(dto: GetListPostUserReqDto, user: User) {
-    const { limit, page, userId } = dto;
+    const { limit, page, userId, excludeMe } = dto;
+    let { searchText } = dto;
 
-    const isMyPosts = user.id === userId;
     const friendIds: Set<number> = new Set();
     friendIds.add(user.id);
 
@@ -63,7 +77,7 @@ export class PostUserService {
           qb2.orWhere(
             new Brackets((qb3) => {
               qb3
-                .where(`p.user_id IN (:...friendIds)`, {
+                .where(`p.userId IN (:...friendIds)`, {
                   friendIds: Array.from(friendIds),
                 })
                 .andWhere(`p.audienceType = '${AudienceType.FRIEND}'`);
@@ -73,7 +87,7 @@ export class PostUserService {
           qb2.orWhere(
             new Brackets((qb3) => {
               qb3
-                .where(`p.user_id = ${user.id}`)
+                .where(`p.userId = ${user.id}`)
                 .andWhere(`p.audienceType = '${AudienceType.ONLY_ME}'`);
             }),
           );
@@ -82,6 +96,14 @@ export class PostUserService {
 
     if (userId) {
       qb.andWhere('p.userId = :userId', { userId });
+    }
+
+    if (excludeMe) qb.andWhere(`p.userId != ${user.id}`);
+
+    if (searchText) {
+      searchText = `%${searchText}%`;
+
+      qb.andWhere('p.content ILIKE :searchText', { searchText });
     }
 
     const { items, meta } = await paginate(qb, { page, limit });
@@ -96,44 +118,11 @@ export class PostUserService {
           },
         });
 
-        const [firstComment, reactionCount, totalCommentCount, myReaction] =
-          await Promise.all([
-            this.commentRepo.findFirst({
-              where: { postId: item.id, parentId: IsNull() },
-              relations: {
-                user: { userProfile: { avatar: true } },
-                commentFiles: { file: true },
-              },
-              order: { createdAt: 'DESC' },
-            }),
-            this.postReactionRepo.getReactionCount(item.id),
-            this.commentRepo.countDirectPostComment(item.id),
-            this.postReactionRepo.findOneBy({
-              postId: item.id,
-              userId: user.id,
-            }),
-          ]);
-
-        let commentReactionCount: PostResDtoParams['commentReactionCount'];
-        let myCommentReaction: CommentReaction;
-        if (firstComment) {
-          commentReactionCount =
-            await this.commentReactionRepo.getReactionCount(firstComment.id);
-          myCommentReaction = await this.commentReactionRepo.findOneBy({
-            commentId: firstComment.id,
-            userId: user.id,
-          });
-        }
+        const subData = await this.getPostSubData(item.id, user);
 
         return PostResDto.forUser({
           data: post,
-          isMutable: isMyPosts,
-          firstComment,
-          reactionCount,
-          totalCommentCount,
-          myReaction,
-          commentReactionCount,
-          myCommentReaction,
+          ...subData,
         });
       }),
     );
@@ -142,12 +131,14 @@ export class PostUserService {
   }
 
   @Transactional()
-  async getDetail(id: number, user: User) {
+  async getDetail(id: number, dto: GetDetailPostUserReqDto, user: User) {
+    const { commentId } = dto;
+
     const post = await this.postRepo.findOneOrThrowNotFoundExc({
       where: { id },
       relations: {
         postFiles: { file: true },
-        user: { userProfile: true },
+        user: { userProfile: { avatar: true } },
         comments: true,
       },
     });
@@ -161,12 +152,21 @@ export class PostUserService {
         if (!isFriend) throw new ExpectationFailedExc({ statusCode: 1 });
     }
 
-    // return PostResDto.forUser({ data: post });
+    const subData = await this.getPostSubData(id, user, commentId);
+
+    return PostResDto.forUser({
+      data: post,
+      ...subData,
+    });
   }
 
   @Transactional()
   async reactPost(dto: ReactPostUserReqDto, user: User) {
     const { postId, type } = dto;
+
+    const post = await this.postRepo.findOneByOrThrowNotFoundExc({
+      id: postId,
+    });
 
     let reaction = await this.postReactionRepo.findOneBy({
       postId,
@@ -184,7 +184,27 @@ export class PostUserService {
 
     await this.postReactionRepo.save(reaction);
 
+    await this.sendPostReactionSavedKafka(post, reaction);
+
     return PostReactionResDto.forUser({ data: reaction });
+  }
+
+  @Transactional()
+  async deleteReactPost(dto: DeleteReactPostUserReqDto, user: User) {
+    const { postId } = dto;
+
+    const postReaction =
+      await this.postReactionRepo.findOneByOrThrowNotFoundExc({
+        postId,
+        userId: user.id,
+      });
+
+    await this.postReactionRepo.softDelete({
+      postId,
+      userId: user.id,
+    });
+
+    await this.sendPostReactionDeletedKafka(postReaction.id);
   }
 
   @Transactional()
@@ -198,11 +218,11 @@ export class PostUserService {
     });
     await this.postRepo.save(post);
 
-    if (fileIds?.length) {
-      await this.saveFileIds(post.id, fileIds, []);
+    if (Array.isArray(fileIds)) {
+      await this.saveFiles(post.id, fileIds, []);
     }
 
-    return this.getDetail(post.id, user);
+    return this.getDetail(post.id, {}, user);
   }
 
   @Transactional()
@@ -221,25 +241,38 @@ export class PostUserService {
     });
     await this.postRepo.save(post);
 
-    if (fileIds?.length) {
-      await this.saveFileIds(post.id, fileIds, post.postFiles);
+    if (Array.isArray(fileIds)) {
+      await this.saveFiles(post.id, fileIds, post.postFiles);
     }
 
-    return this.getDetail(id, user);
+    return this.getDetail(id, {}, user);
   }
 
   @Transactional()
   async delete(id: number, user: User) {
     const post = await this.postRepo.findOneOrThrowNotFoundExc({
       where: { id, userId: user.id },
-      relations: { postFiles: true },
+      relations: {
+        postFiles: true,
+        postReactions: true,
+      },
     });
 
-    await this.postRepo.softDelete(post);
-    await this.postFileRepo.softDelete(post.postFiles.map((item) => item.id));
+    await Promise.all([
+      this.postRepo.softDelete(post.id),
+      this.postReactionRepo.softDelete({ postId: id }),
+      this.commentRepo.softDelete({ postId: id }),
+      this.postFileRepo.softDelete({ postId: id }),
+    ]);
+
+    await Promise.all(
+      post.postReactions.map((item) =>
+        this.sendPostReactionDeletedKafka(item.id),
+      ),
+    );
   }
 
-  private async saveFileIds(
+  private async saveFiles(
     postId: number,
     dtos: number[],
     entities: PostFile[],
@@ -269,5 +302,92 @@ export class PostUserService {
       entityIdsToDel.length && this.postFileRepo.softDelete(entityIdsToDel),
       entitiesToInsert.length && this.postFileRepo.save(entitiesToInsert),
     ]);
+  }
+
+  private async getPostSubData(postId: number, user: User, commentId?: number) {
+    const [
+      reactionCount,
+      totalDirectCommentCount,
+      totalCommentCount,
+      myReaction,
+    ] = await Promise.all([
+      this.postReactionRepo.getReactionCount(postId),
+      this.commentRepo.countDirectPostComment(postId),
+      this.commentRepo.countBy({ postId }),
+      this.postReactionRepo.findOneBy({
+        postId: postId,
+        userId: user.id,
+      }),
+    ]);
+
+    let firstComment: CommentResDto;
+
+    if (commentId) {
+      firstComment = await this.commentUserService.getParentsTree(
+        commentId,
+        user,
+      );
+    } else {
+      const comment = await this.commentRepo.findFirst({
+        where: { postId: postId, parentId: IsNull() },
+        relations: {
+          user: { userProfile: { avatar: true } },
+          commentFiles: { file: true },
+        },
+        order: { createdAt: 'DESC' },
+      });
+
+      if (comment) {
+        const commentData = await this.commentUserService.getCommentData(
+          comment.id,
+          user.id,
+        );
+
+        firstComment = CommentResDto.forUser({
+          data: comment,
+          ...commentData,
+        });
+      }
+    }
+
+    return {
+      firstComment,
+      reactionCount,
+      totalCommentCount,
+      totalDirectCommentCount,
+      myReaction,
+    };
+  }
+
+  private async sendPostReactionSavedKafka(
+    post: Post,
+    postReaction: PostReaction,
+  ) {
+    const kafkaPayload = new SavePostReactionKafkaPayload({
+      id: postReaction.id,
+      createdAt: postReaction.createdAt,
+      postContent: post.content,
+      postId: post.id,
+      postOwnerId: post.userId,
+      type: postReaction.type,
+      updatedAt: postReaction.updatedAt,
+      userId: postReaction.userId,
+    });
+
+    await this.kafkaProducer.send<SavePostReactionKafkaPayload>({
+      topic: KAFKA_TOPIC.POST_REACTION_SAVED,
+      messages: [{ value: kafkaPayload, key: String(postReaction.id) }],
+    });
+  }
+
+  private async sendPostReactionDeletedKafka(postReactionId: number) {
+    const kafkaPayload = new DeletePostReactionKafkaPayload({
+      id: postReactionId,
+    });
+
+    await this.kafkaProducer.send<DeletePostReactionKafkaPayload>({
+      topic: KAFKA_TOPIC.POST_REACTION_DELETED,
+      messages: [{ value: kafkaPayload, key: String(postReactionId) }],
+    });
   }
 }

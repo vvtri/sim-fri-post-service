@@ -33,28 +33,14 @@ export class Comment extends BaseEntity {
   post: Post;
   // end join post
 
-  // // join parent
-  // @Column()
-  // parentId: number;
-
-  // @ManyToOne(() => Comment, (c) => c.child)
-  // @JoinColumn()
-  // parent: Comment;
-  // // end join parent
-
-  // // join child
-  // @OneToMany(() => Comment, (c) => c.parent)
-  // @JoinColumn()
-  // child: Comment[];
-  // // end join child
-
   @TreeChildren()
   children: Comment[];
 
-  @Column()
+  @Column({ nullable: true })
   parentId: number;
 
   @TreeParent()
+  @JoinColumn()
   parent: Comment;
 
   mpath?: string;
@@ -73,9 +59,4 @@ export class Comment extends BaseEntity {
 
   @OneToMany(() => CommentReaction, (cr) => cr.comment)
   commentReactions: CommentReaction[];
-
-  // @AfterLoad()
-  // afterLoad() {
-  //   this.mpath =
-  // }
 }

@@ -20,6 +20,7 @@ import { PaginationResponse } from '../../../common/decorators/swagger.decorator
 import { CommentResDto } from '../../dtos/common/comment.res.dto';
 import {
   CreateCommentUserReqDto,
+  DeleteReactCommentUserReqDto,
   GetListCommentUserReqDto,
   GetListReplyCommentUserReqDto,
   ReactCommentUserReqDto,
@@ -33,18 +34,26 @@ import { CommentUserService } from '../../services/user/comment.user.service';
 export class CommentUserController {
   constructor(private commentUserService: CommentUserService) {}
 
-  @Get('/')
-  @PaginationResponse(CommentResDto)
-  getList(@Query() dto: GetListCommentUserReqDto, @CurrentUser() user: User) {
-    return this.commentUserService.getList(dto, user);
-  }
-
   @Get('/reply')
   getListReply(
     @Query() dto: GetListReplyCommentUserReqDto,
     @CurrentUser() user: User,
   ) {
     return this.commentUserService.getListReply(dto, user);
+  }
+
+  @Get('/parent-tree/:commentId')
+  getParentTree(
+    @Param('commentId', ParseIntPipe) commentId: number,
+    @CurrentUser() user: User,
+  ) {
+    return this.commentUserService.getParentsTree(commentId, user);
+  }
+
+  @Get()
+  @PaginationResponse(CommentResDto)
+  getList(@Query() dto: GetListCommentUserReqDto, @CurrentUser() user: User) {
+    return this.commentUserService.getList(dto, user);
   }
 
   @Post('react')
@@ -57,9 +66,17 @@ export class CommentUserController {
     return this.commentUserService.create(body, user);
   }
 
-  @Patch('')
+  @Patch()
   update(@Body() body: UpdateCommentUserReqDto, @CurrentUser() user: User) {
     return this.commentUserService.update(body, user);
+  }
+
+  @Delete('react')
+  deleteReact(
+    @Body() body: DeleteReactCommentUserReqDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.commentUserService.deleteReact(body, user);
   }
 
   @Delete(':id')

@@ -28,7 +28,7 @@ export class CreateCommentUserReqDto {
 
   @IsValidNumber({ min: 1, required: false })
   @ValidateIf(({ postId }) => !postId)
-  commentId?: number;
+  parentId?: number;
 
   @IsValidNumber({ min: 1 })
   @ValidateIf(({ commentId }) => !commentId)
@@ -36,7 +36,7 @@ export class CreateCommentUserReqDto {
 }
 
 export class UpdateCommentUserReqDto extends PartialType(
-  OmitType(CreateCommentUserReqDto, ['commentId', 'postId']),
+  OmitType(CreateCommentUserReqDto, ['parentId', 'postId']),
 ) {
   @IsValidNumber({ min: 1 })
   id: number;
@@ -48,4 +48,9 @@ export class ReactCommentUserReqDto {
 
   @IsValidEnum({ enum: CommentReactionType })
   type: CommentReactionType;
+}
+
+export class DeleteReactCommentUserReqDto {
+  @IsValidNumber({ min: 1 })
+  commentId: number;
 }

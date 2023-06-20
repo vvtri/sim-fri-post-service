@@ -20,6 +20,8 @@ import { PaginationResponse } from '../../../common/decorators/swagger.decorator
 import { PostResDto } from '../../dtos/common/post.res.dto';
 import {
   CreatePostUserReqDto,
+  DeleteReactPostUserReqDto,
+  GetDetailPostUserReqDto,
   GetListPostUserReqDto,
   ReactPostUserReqDto,
 } from '../../dtos/user/req/post.user.req.dto';
@@ -32,8 +34,12 @@ export class PostUserController {
   constructor(private postUserService: PostUserService) {}
 
   @Get(':id')
-  getDetail(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: User) {
-    return this.postUserService.getDetail(id, user);
+  getDetail(
+    @Param('id', ParseIntPipe) id: number,
+    @Query() query: GetDetailPostUserReqDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.postUserService.getDetail(id, query, user);
   }
 
   @Get()
@@ -62,6 +68,14 @@ export class PostUserController {
     @CurrentUser() user: User,
   ) {
     return this.postUserService.update(id, body, user);
+  }
+
+  @Delete('react')
+  deleteReact(
+    @Body() body: DeleteReactPostUserReqDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.postUserService.deleteReactPost(body, user);
   }
 
   @Delete(':id')
