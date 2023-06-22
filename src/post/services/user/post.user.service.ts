@@ -255,6 +255,7 @@ export class PostUserService {
       relations: {
         postFiles: true,
         postReactions: true,
+        comments: { commentReactions: true },
       },
     });
 
@@ -265,11 +266,21 @@ export class PostUserService {
       this.postFileRepo.softDelete({ postId: id }),
     ]);
 
-    await Promise.all(
-      post.postReactions.map((item) =>
+    await Promise.all([
+      ...post.postReactions.map((item) =>
         this.sendPostReactionDeletedKafka(item.id),
       ),
-    );
+      ...post.comments.map(async (item) => {
+        await Promise.all(
+          item.commentReactions.map(async (item2) => {
+            await this.commentUserService.sendCommentReactionDeletedKafka(
+              item2.id,
+            );
+          }),
+        );
+        await this.commentUserService.sendCommentDeletedKafka(item.id);
+      }),
+    ]);
   }
 
   private async saveFiles(

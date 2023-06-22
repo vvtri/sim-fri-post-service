@@ -390,7 +390,7 @@ export class CommentUserService {
     }
   }
 
-  private async sendCommentSavedKafka(comment: Comment, post: Post) {
+  async sendCommentSavedKafka(comment: Comment, post: Post) {
     const replyUserIds: Set<number> = new Set();
 
     if (comment.parentId) {
@@ -418,7 +418,7 @@ export class CommentUserService {
     });
   }
 
-  private async sendCommentReactionSavedKafka(
+  async sendCommentReactionSavedKafka(
     comment: Comment,
     commentReaction: CommentReaction,
   ) {
@@ -448,7 +448,7 @@ export class CommentUserService {
     });
   }
 
-  private async sendCommentDeletedKafka(commentId: number) {
+  async sendCommentDeletedKafka(commentId: number) {
     const kafkaPayload = new DeleteCommentKafkaPayload({
       id: commentId,
     });
@@ -459,7 +459,7 @@ export class CommentUserService {
     });
   }
 
-  private async sendCommentReactionDeletedKafka(commentReactionId: number) {
+  async sendCommentReactionDeletedKafka(commentReactionId: number) {
     const kafkaPayload = new DeleteCommentReactionKafkaPayload({
       id: commentReactionId,
     });
