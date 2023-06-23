@@ -69,7 +69,8 @@ export class PostUserService {
       .createQueryBuilder('p')
       .groupBy('p.id')
       .select('p.id')
-      .orderBy('p.createdAt', 'DESC')
+      .orderBy('case when p.userId IN :friendIds then 2 else 1 end', 'DESC')
+      .addOrderBy('p.createdAt', 'DESC')
       .where(
         new Brackets((qb2) => {
           qb2.where(`p.audienceType = '${AudienceType.PUBLIC}'`);
