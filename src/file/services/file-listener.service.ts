@@ -32,6 +32,5 @@ export class FileListenerService {
     message,
   }: EachMessagePayload<FileUpdatedKafkaPayload>) {
     await this.fileRepo.update(message.value.id, message.value);
-    console.log('proceeded');
   }
 }
