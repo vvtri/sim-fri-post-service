@@ -69,10 +69,10 @@ export class PostUserService {
       .createQueryBuilder('p')
       .groupBy('p.id')
       .select('p.id')
-      .orderBy(
-        'case when p.userId IN (:...friendIds) then 2 else 1 end',
-        'DESC',
-      )
+      // .orderBy(
+      //   'case when p.userId IN (:...friendIds) then 2 else 1 end',
+      //   'DESC',
+      // )
       .addOrderBy('p.createdAt', 'DESC')
       .where(
         new Brackets((qb2) => {
